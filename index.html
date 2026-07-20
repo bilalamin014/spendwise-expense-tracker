@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b6e4f">
+  <meta name="description" content="A private, offline-first expense and income tracker for iPhone.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpendWise">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="app.css">
+  <title>SpendWise</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PERSONAL FINANCE</p>
+        <h1 id="screenTitle">Overview</h1>
+      </div>
+      <button id="quickExportButton" class="icon-button" type="button" aria-label="Export transactions as CSV">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+      </button>
+    </header>
+
+    <main>
+      <section id="overviewView" class="view" data-title="Overview">
+        <div class="month-switcher" role="group" aria-label="Selected month">
+          <button id="previousMonthButton" class="month-arrow" type="button" aria-label="Previous month">‹</button>
+          <button id="monthLabelButton" class="month-label" type="button" aria-label="Return to current month">
+            <span id="monthLabel"></span>
+            <small>Tap for current month</small>
+          </button>
+          <button id="nextMonthButton" class="month-arrow" type="button" aria-label="Next month">›</button>
+        </div>
+
+        <article class="balance-card">
+          <div class="balance-topline">
+            <span>Monthly balance</span>
+            <span id="budgetStatusPill" class="status-pill">No budget</span>
+          </div>
+          <p id="monthlyBalance" class="balance-value">€0.00</p>
+          <div class="balance-grid">
+            <div>
+              <span class="metric-label"><i class="dot income-dot"></i>Income</span>
+              <strong id="monthlyIncome">€0.00</strong>
+            </div>
+            <div>
+              <span class="metric-label"><i class="dot expense-dot"></i>Spent</span>
+              <strong id="monthlySpent">€0.00</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel budget-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">MONTHLY BUDGET</p>
+              <h2 id="budgetRemaining">Set your budget</h2>
+            </div>
+            <button id="openBudgetButton" class="text-button" type="button">Edit</button>
+          </div>
+          <div class="progress-track" aria-hidden="true"><span id="budgetProgress"></span></div>
+          <div class="progress-labels">
+            <span id="budgetUsedLabel">€0 spent</span>
+            <span id="budgetTotalLabel">No limit</span>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">SPENDING</p>
+              <h2>By category</h2>
+            </div>
+            <button class="text-button" type="button" data-go-view="insights">Details</button>
+          </div>
+          <div id="categoryOverview" class="category-overview"></div>
+        </article>
+
+        <article class="panel recent-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">ACTIVITY</p>
+              <h2>Recent transactions</h2>
+            </div>
+            <button class="text-button" type="button" data-go-view="transactions">See all</button>
+          </div>
+          <div id="recentTransactions" class="transaction-list"></div>
+        </article>
+      </section>
+
+      <section id="transactionsView" class="view" data-title="Transactions" hidden>
+        <div class="search-box">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <label class="sr-only" for="searchInput">Search transactions</label>
+          <input id="searchInput" type="search" placeholder="Search notes or categories" autocomplete="off">
+        </div>
+        <div class="filter-row" role="group" aria-label="Transaction filters">
+          <label>
+            <span class="sr-only">Transaction type</span>
+            <select id="typeFilter">
+              <option value="all">All types</option>
+              <option value="expense">Expenses</option>
+              <option value="income">Income</option>
+            </select>
+          </label>
+          <label>
+            <span class="sr-only">Category</span>
+            <select id="categoryFilter"><option value="all">All categories</option></select>
+          </label>
+        </div>
+        <div id="transactionSummary" class="inline-summary"></div>
+        <div id="allTransactions" class="transaction-list full-list"></div>
+      </section>
+
+      <section id="insightsView" class="view" data-title="Insights" hidden>
+        <article class="panel insight-hero">
+          <p class="section-kicker">LAST 6 MONTHS</p>
+          <h2>Income vs spending</h2>
+          <div id="trendChart" class="trend-chart" role="img" aria-label="Six-month income and spending comparison"></div>
+          <div class="chart-legend" aria-hidden="true">
+            <span><i class="dot income-dot"></i>Income</span>
+            <span><i class="dot expense-dot"></i>Spending</span>
+          </div>
+        </article>
+        <div id="insightMetrics" class="metric-cards"></div>
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">BREAKDOWN</p>
+              <h2>Top categories</h2>
+            </div>
+          </div>
+          <div id="categoryBreakdown" class="breakdown-list"></div>
+        </article>
+      </section>
+
+      <section id="settingsView" class="view" data-title="Settings" hidden>
+        <article class="panel settings-card">
+          <h2>Preferences</h2>
+          <label class="setting-row">
+            <span><strong>Currency</strong><small>Used throughout the app</small></span>
+            <select id="currencySelect">
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="USD">USD ($)</option>
+              <option value="PKR">PKR (Rs)</option>
+            </select>
+          </label>
+          <label class="setting-row">
+            <span><strong>Appearance</strong><small>Match your iPhone or choose a theme</small></span>
+            <select id="themeSelect">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <button id="settingsBudgetButton" class="setting-row setting-button" type="button">
+            <span><strong>Monthly budget</strong><small id="settingsBudgetValue">Not set</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </article>
+
+        <article class="panel settings-card">
+          <h2>Your data</h2>
+          <button id="exportCsvButton" class="setting-row setting-button" type="button">
+            <span><strong>Export CSV</strong><small>Open in Numbers or Excel</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+          <button id="backupButton" class="setting-row setting-button" type="button">
+            <span><strong>Download backup</strong><small>Save a complete JSON copy</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+          <button id="importButton" class="setting-row setting-button" type="button">
+            <span><strong>Restore backup</strong><small>Import a SpendWise JSON file</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+          <input id="importFileInput" class="sr-only" type="file" accept="application/json,.json">
+          <button id="demoDataButton" class="setting-row setting-button" type="button">
+            <span><strong>Add demo data</strong><small>Explore the charts with sample entries</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+          <button id="clearDataButton" class="setting-row setting-button danger-row" type="button">
+            <span><strong>Erase all data</strong><small id="dataCountLabel">0 transactions saved</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </article>
+
+        <article id="installCard" class="panel install-card">
+          <div class="install-icon">↗</div>
+          <div>
+            <h2>Install on iPhone</h2>
+            <p>Open this app in Safari, tap Share, then choose <strong>Add to Home Screen</strong>.</p>
+          </div>
+        </article>
+
+        <p class="privacy-note">Your financial data stays in this browser on your device. SpendWise has no account, ads or tracking.</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="nav-button is-active" type="button" data-view="overview" aria-current="page">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-6v-6h-4v6H4z"/></svg><span>Overview</span>
+      </button>
+      <button class="nav-button" type="button" data-view="transactions">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 5h12M6 12h12M6 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/></svg><span>Activity</span>
+      </button>
+      <button id="addTransactionButton" class="add-nav-button" type="button" aria-label="Add transaction">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="nav-button" type="button" data-view="insights">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 20V10m7 10V4m7 16v-7"/></svg><span>Insights</span>
+      </button>
+      <button class="nav-button" type="button" data-view="settings">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6a8 8 0 0 0-1.5.9l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.1l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 1.5.9l.3 2.6h4l.3-2.6a8 8 0 0 0 1.5-.9l2.4 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg><span>Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <dialog id="transactionDialog" class="sheet-dialog">
+    <form id="transactionForm" novalidate>
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-header">
+        <button id="cancelTransactionButton" class="text-button" type="button">Cancel</button>
+        <h2 id="transactionDialogTitle">Add transaction</h2>
+        <button class="text-button save-button" type="submit">Save</button>
+      </div>
+
+      <div class="type-toggle" role="group" aria-label="Transaction type">
+        <button class="type-option is-selected" type="button" data-transaction-type="expense">Expense</button>
+        <button class="type-option" type="button" data-transaction-type="income">Income</button>
+      </div>
+      <input id="transactionType" type="hidden" value="expense">
+      <input id="editingTransactionId" type="hidden">
+
+      <label class="amount-field">
+        <span id="amountCurrencySymbol">€</span>
+        <input id="amountInput" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required>
+      </label>
+      <p id="amountError" class="field-error" role="alert"></p>
+
+      <fieldset class="category-fieldset">
+        <legend>Category</legend>
+        <div id="categoryPicker" class="category-picker"></div>
+      </fieldset>
+
+      <label class="form-field">
+        <span>Date</span>
+        <input id="dateInput" type="date" required>
+      </label>
+      <label class="form-field">
+        <span>Note <small>(optional)</small></span>
+        <input id="noteInput" type="text" maxlength="80" placeholder="What was this for?">
+      </label>
+
+      <button id="deleteTransactionButton" class="delete-button" type="button" hidden>Delete transaction</button>
+    </form>
+  </dialog>
+
+  <dialog id="budgetDialog" class="sheet-dialog compact-sheet">
+    <form id="budgetForm" novalidate>
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-header">
+        <button id="cancelBudgetButton" class="text-button" type="button">Cancel</button>
+        <h2>Monthly budget</h2>
+        <button class="text-button save-button" type="submit">Save</button>
+      </div>
+      <p class="sheet-copy">Set a spending limit for <strong id="budgetMonthName"></strong>.</p>
+      <label class="form-field">
+        <span>Budget amount</span>
+        <span class="input-with-prefix"><span id="budgetCurrencySymbol">€</span><input id="budgetInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></span>
+      </label>
+      <p class="helper-text">Enter 0 to remove the budget for this month.</p>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">SpendWise requires JavaScript to calculate and save your expenses.</p></noscript>
+  <script src="app.js"></script>
+</body>
+</html>
