@@ -1,0 +1,11 @@
+{
+  "appId": "com.bilalamin.spendwise",
+  "appName": "SpendWise",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "scheme": "SpendWise"
+  }
+}

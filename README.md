@@ -23,6 +23,21 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080` in a browser. Do not open `index.html` directly if you want to test offline installation, because service workers require HTTPS or localhost.
 
+## Build the native iOS app
+
+The repository includes a Capacitor 8 iOS project with the bundle identifier `com.bilalamin.spendwise`.
+
+Requirements: a Mac, Node.js 22 or newer, Xcode 26 or newer and an active Apple Developer Program membership.
+
+```bash
+npm install
+npm run ios
+```
+
+The `ios` command copies the latest web app into the native project, synchronizes the Capacitor plugins and opens Xcode. Select your Apple development team under **Signing & Capabilities** before running the app on an iPhone.
+
+See `APP_STORE_CHECKLIST.md` for testing, archiving and submission steps.
+
 ## Privacy and storage
 
 All transactions, preferences and budgets are kept in browser local storage on the device. Nothing is uploaded by the app. Use **Settings → Download backup** regularly, especially before clearing Safari website data or changing phones.

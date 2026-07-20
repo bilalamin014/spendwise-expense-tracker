@@ -32,6 +32,7 @@
 
   function init() {
     cacheElements();
+    setupNativeShell();
     applyTheme();
     bindEvents();
     populateCategoryFilter();
@@ -76,7 +77,10 @@
     });
 
     document.querySelectorAll("[data-view]").forEach(function (button) {
-      button.addEventListener("click", function () { showView(button.dataset.view); });
+      button.addEventListener("click", function () {
+        nativeHaptic("Light");
+        showView(button.dataset.view);
+      });
     });
     document.addEventListener("click", function (event) {
       var viewButton = event.target.closest("[data-go-view]");
@@ -503,6 +507,7 @@
     persist();
     closeTransactionDialog();
     renderAll();
+    nativeHaptic("Medium");
     showToast(existing ? "Transaction updated" : "Transaction saved");
   }
 
@@ -514,6 +519,7 @@
     persist();
     closeTransactionDialog();
     renderAll();
+    nativeHaptic("Heavy");
     showToast("Transaction deleted");
   }
 
@@ -534,6 +540,7 @@
     persist();
     elements.budgetDialog.close();
     renderAll();
+    nativeHaptic("Light");
     showToast(amount ? "Monthly budget saved" : "Monthly budget removed");
   }
 
@@ -552,7 +559,7 @@
   }
 
   function updateInstallCard() {
-    var standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    var standalone = isNativeApp() || window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
     elements.installCard.hidden = standalone;
   }
 
@@ -591,6 +598,25 @@
   }
 
   async function shareOrDownload(blob, filename, title) {
+    if (isNativeApp() && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
+      try {
+        var base64 = await blobToBase64(blob);
+        var saved = await window.Capacitor.Plugins.Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: "CACHE",
+          recursive: true
+        });
+        await window.Capacitor.Plugins.Share.share({
+          title: title,
+          url: saved.uri,
+          dialogTitle: title
+        });
+        return;
+      } catch (nativeShareError) {
+        showToast("Native sharing was unavailable. Preparing a download instead.");
+      }
+    }
     var file = new File([blob], filename, { type: blob.type });
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
@@ -819,6 +845,33 @@
   function createId() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
     return "tx-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+
+  function isNativeApp() {
+    return Boolean(window.Capacitor && typeof window.Capacitor.isNativePlatform === "function" && window.Capacitor.isNativePlatform());
+  }
+
+  function setupNativeShell() {
+    if (!isNativeApp()) return;
+    document.documentElement.classList.add("native-ios");
+  }
+
+  function nativeHaptic(style) {
+    if (!isNativeApp() || !window.Capacitor.Plugins.Haptics) return;
+    window.Capacitor.Plugins.Haptics.impact({ style: style || "Light" }).catch(function () {
+      return null;
+    });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        resolve(String(reader.result).split(",")[1] || "");
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   function csvCell(value) {
