@@ -2,6 +2,8 @@
 
 SpendWise is a private, offline-first expense tracker designed for the iPhone 14 Pro Max. It tracks expenses and income, monthly budgets, categories, six-month trends and searchable transactions. It can export CSV files for Numbers or Excel and create/import JSON backups.
 
+**Live app:** https://bilalamin014.github.io/spendwise-expense-tracker/
+
 ## Install on an iPhone
 
 An installable web app must be served from an HTTPS website. Upload the contents of this folder to any static host such as GitHub Pages, Cloudflare Pages or Netlify.
